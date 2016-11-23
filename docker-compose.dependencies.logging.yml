@@ -1,0 +1,48 @@
+# Starts only third-party dependencies for logging
+# Useful for local dev environment when you prefer to run services natively (via node or npm).
+
+version: '2'
+services:
+  elasticsearch:
+    image: elasticsearch:latest
+    container_name: metrics_logging_elastic
+    environment:
+    - LOGSPOUT=ignore
+    ports:
+    - 9201:9200
+    - 9301:9300
+    volumes:
+    - /c/Users/Public/docker_persistence/recalculations/logging/elasticsearch/data:/elasticsearch/data
+
+  logstash:
+    image: logstash:latest
+    container_name: metrics_logging_logstash
+    command: "-f /etc/logstash/conf.d/"
+    environment:
+    - LOGSPOUT=ignore
+    - ELASTICSEARCH_HOSTS=elasticsearch:9200
+    - STDOUT=true
+    depends_on:
+    - elasticsearch
+    volumes:
+    - /c/Users/Public/docker_persistence/recalculations/logging/logstash/config:/etc/logstash/conf.d
+
+  kibana:
+    image: kibana:latest
+    container_name: metrics_logging_kibana
+    environment:
+    - LOGSPOUT=ignore
+    - ELASTICSEARCH_URL=http://elasticsearch:9200/
+    depends_on:
+    - elasticsearch
+    ports:
+    - 5601:5601
+
+  logspout:
+    build: logspout/
+    command: 'logstash+tcp://logstash:5000'
+    container_name: metrics_logging_logspout
+    depends_on:
+    - logstash
+    volumes:
+    - '/var/run/docker.sock:/var/run/docker.sock'
