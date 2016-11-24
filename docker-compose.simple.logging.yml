@@ -1,0 +1,46 @@
+# Starts only third-party dependencies for logging
+# Useful for local dev environment when you prefer to run services natively (via node or npm).
+
+version: '2'
+services:
+  test_app:
+    build: test_app/
+    container_name: test_app
+    environment:
+    - NODE_ENV=production
+
+  log_collector:
+    build: log_collector/
+    container_name: log_collector
+    environment:
+    - LOGSPOUT=ignore
+    - NODE_ENV=production
+    ports:
+    - 3000:3000
+    - 3001:3001
+
+  logspout:
+    image: gliderlabs/logspout:latest
+    command: 'raw+tcp://log_collector:3000/log/'
+    container_name: logspout
+    volumes:
+    - '/var/run/docker.sock:/var/run/docker.sock'
+
+#  logspout:
+#    build: logspout/
+#    command: 'logstash+tcp://logstash:5000'
+#    container_name: metrics_logging_logspout
+#    depends_on:
+#    - logstash
+#    volumes:
+#    - '/var/run/docker.sock:/var/run/docker.sock'
+#
+#  logstash:
+#    image: logstash:latest
+#    container_name: metrics_logging_logstash
+#    command: "-f /etc/logstash/conf.d/"
+#    environment:
+#    - LOGSPOUT=ignore
+#    - STDOUT=true
+#    volumes:
+#    - /c/Users/Public/docker_persistence/recalculations/logging/logstash/config:/etc/logstash/conf.d

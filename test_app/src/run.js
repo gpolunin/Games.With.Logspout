@@ -1,6 +1,6 @@
 function appInner()
 {
-    console.log(`Log record: ${new Date()}`);
+    console.log(`Test app 1 Log record: ${new Date()}`);
     setTimeout(appInner, 3000);
 }
 
