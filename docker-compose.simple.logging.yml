@@ -6,6 +6,8 @@ services:
   test_app:
     build: test_app/
     container_name: test_app
+    depends_on:
+    - logspout
     environment:
     - NODE_ENV=production
 
@@ -19,28 +21,30 @@ services:
     - 3000:3000
     - 3001:3001
 
+#  logspout:
+#    image: gliderlabs/logspout:latest
+#    command: 'raw+tcp://log_collector:3000/log/'
+#    container_name: logspout
+#    volumes:
+#    - '/var/run/docker.sock:/var/run/docker.sock'
+
   logspout:
-    image: gliderlabs/logspout:latest
-    command: 'raw+tcp://log_collector:3000/log/'
-    container_name: logspout
+    image: logspout
+# should work in docker compose 1.9    build: logspout/
+    container_name: metrics_logging_logspout
+    depends_on:
+    - logstash
+    entrypoint: ['./wait-for-it.sh', '-t', '30', 'logstash:9600', '--']
+    command: ['/bin/logspout','logstash+tcp://logstash:5000']
     volumes:
     - '/var/run/docker.sock:/var/run/docker.sock'
 
-#  logspout:
-#    build: logspout/
-#    command: 'logstash+tcp://logstash:5000'
-#    container_name: metrics_logging_logspout
-#    depends_on:
-#    - logstash
-#    volumes:
-#    - '/var/run/docker.sock:/var/run/docker.sock'
-#
-#  logstash:
-#    image: logstash:latest
-#    container_name: metrics_logging_logstash
-#    command: "-f /etc/logstash/conf.d/"
-#    environment:
-#    - LOGSPOUT=ignore
-#    - STDOUT=true
-#    volumes:
-#    - /c/Users/Public/docker_persistence/recalculations/logging/logstash/config:/etc/logstash/conf.d
+  logstash:
+    image: logstash:latest
+    container_name: metrics_logging_logstash
+    command: "-f /etc/logstash/conf.d/"
+    environment:
+    - LOGSPOUT=ignore
+    - STDOUT=true
+    volumes:
+    - /c/Users/Public/docker_persistence/recalculations/logging/logstash/config:/etc/logstash/conf.d
