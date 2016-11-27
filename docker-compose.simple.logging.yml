@@ -21,16 +21,10 @@ services:
     - 3000:3000
     - 3001:3001
 
-#  logspout:
-#    image: gliderlabs/logspout:latest
-#    command: 'raw+tcp://log_collector:3000/log/'
-#    container_name: logspout
-#    volumes:
-#    - '/var/run/docker.sock:/var/run/docker.sock'
-
   logspout:
     image: logspout
-# should work in docker compose 1.9    build: logspout/
+# should work in docker compose 1.9
+#    build: logspout/
     container_name: metrics_logging_logspout
     depends_on:
     - logstash
@@ -40,11 +34,33 @@ services:
     - '/var/run/docker.sock:/var/run/docker.sock'
 
   logstash:
-    image: logstash:latest
+    build: logstash
     container_name: metrics_logging_logstash
     command: "-f /etc/logstash/conf.d/"
+    depends_on:
+    - log_collector
     environment:
     - LOGSPOUT=ignore
     - STDOUT=true
+
+  elasticsearch:
+    image: elasticsearch:latest
+    container_name: metrics_logging_elastic
+    environment:
+    - LOGSPOUT=ignore
+    ports:
+    - 9201:9200
+    - 9301:9300
     volumes:
-    - /c/Users/Public/docker_persistence/recalculations/logging/logstash/config:/etc/logstash/conf.d
+    - /c/Users/Public/docker_persistence/recalculations/logging/elasticsearch/data:/elasticsearch/data
+
+  kibana:
+    image: kibana:latest
+    container_name: metrics_logging_kibana
+    environment:
+    - LOGSPOUT=ignore
+    - ELASTICSEARCH_URL=http://elasticsearch:9200/
+    depends_on:
+    - elasticsearch
+    ports:
+    - 5601:5601
