@@ -4,8 +4,16 @@
 version: '2'
 services:
   test_app:
-    build: test_app/
+    build: test_app
     container_name: test_app
+    depends_on:
+    - logspout
+    environment:
+    - NODE_ENV=production
+
+  test_app2:
+    build: test_app2
+    container_name: test_app2
     depends_on:
     - logspout
     environment:
@@ -26,6 +34,8 @@ services:
 # should work in docker compose 1.9
 #    build: logspout/
     container_name: metrics_logging_logspout
+    environment:
+    - LOGSPOUT=ignore
     depends_on:
     - logstash
     entrypoint: ['./wait-for-it.sh', '-t', '30', 'logstash:9600', '--']
@@ -34,11 +44,12 @@ services:
     - '/var/run/docker.sock:/var/run/docker.sock'
 
   logstash:
-    build: logstash
+    build: logstash/
     container_name: metrics_logging_logstash
     command: "-f /etc/logstash/conf.d/"
     depends_on:
     - log_collector
+    - elasticsearch
     environment:
     - LOGSPOUT=ignore
     - STDOUT=true
