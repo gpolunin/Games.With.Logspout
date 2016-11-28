@@ -46,13 +46,13 @@ services:
   logstash:
     build: logstash/
     container_name: metrics_logging_logstash
-    command: "-f /etc/logstash/conf.d/"
     depends_on:
     - log_collector
     - elasticsearch
     environment:
     - LOGSPOUT=ignore
     - STDOUT=true
+    - ES_HOST=elasticsearch:9200
 
   elasticsearch:
     image: elasticsearch:latest
